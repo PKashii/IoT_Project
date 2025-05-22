@@ -5,7 +5,6 @@ using Opc.UaFx;
 using Opc.UaFx.Client;
 using OpcAgent;
 
-
 public class OpcUaAgent
 {
     private readonly OpcClient _client;
@@ -13,6 +12,7 @@ public class OpcUaAgent
     private readonly Dictionary<string, AzurePublisher> _publishers;
     private readonly Dictionary<string, int> _desiredProductionRates;
     private readonly Dictionary<string, DirectMethodHandler> _directMethodHandlers;
+    private readonly Dictionary<string, int> _lastDeviceErrors;
 
     public OpcUaAgent(string endpoint, Dictionary<string, string> deviceConnectionStrings)
     {
@@ -21,6 +21,7 @@ public class OpcUaAgent
         _desiredProductionRates = new Dictionary<string, int>();
         _publishers = new Dictionary<string, AzurePublisher>();
         _directMethodHandlers = new Dictionary<string, DirectMethodHandler>();
+        _lastDeviceErrors = new Dictionary<string, int>();
 
         foreach (var kvp in deviceConnectionStrings)
         {
@@ -33,6 +34,7 @@ public class OpcUaAgent
 
             _publishers[deviceId] = publisher;
             _directMethodHandlers[deviceId] = handler;
+            _lastDeviceErrors[deviceId] = 0;
         }
     }
 
@@ -61,7 +63,20 @@ public class OpcUaAgent
                 int deviceError = Convert.ToInt32(values["DeviceError"]);
                 await _publishers[device.Name].UpdateReportedAsync(currentRate, deviceError);
 
-                //Console.WriteLine($"[{device.Name}] Sent data: {JsonConvert.SerializeObject(values, Formatting.Indented)}");
+                if (_lastDeviceErrors[device.Name] != deviceError)
+                {
+                    var errorEvent = new Dictionary<string, object>
+                    {
+                        {"deviceId", device.Name},
+                        {"timestamp", DateTime.UtcNow},
+                        {"eventType", "DeviceErrorChanged"},
+                        {"newValue", deviceError}
+                    };
+                    await _publishers[device.Name].SendTelemetryAsync(errorEvent);
+                    _lastDeviceErrors[device.Name] = deviceError;
+                }
+
+                Console.WriteLine($"[{device.Name}] Sent data: {JsonConvert.SerializeObject(values, Formatting.Indented)}");
             }
 
             await Task.Delay(1000);
