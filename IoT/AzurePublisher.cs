@@ -1,19 +1,24 @@
-﻿namespace OpcAgent
-{
-    using Microsoft.Azure.Devices.Client;
-    using System.Text;
-    using Newtonsoft.Json;
-    using System.Threading.Tasks;
+﻿using Microsoft.Azure.Devices.Client;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 
+namespace OpcAgent
+{
     public class AzurePublisher
     {
         private readonly DeviceClient _client;
         private readonly string _deviceId;
+        private readonly DeviceTwinManager _twinManager;
 
-        public AzurePublisher(string connectionString, string deviceId)
+        public AzurePublisher(string connectionString, string deviceId, Action<int> onDesiredProductionRateChanged)
         {
-            _client = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt);
             _deviceId = deviceId;
+            _client = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt);
+            _twinManager = new DeviceTwinManager(_client, deviceId, onDesiredProductionRateChanged);
+            _twinManager.InitializeAsync().Wait();
         }
 
         public async Task SendTelemetryAsync(Dictionary<string, object> data)
@@ -30,7 +35,10 @@
 
             await _client.SendEventAsync(message);
         }
+
+        public Task UpdateReportedAsync(int productionRate, int deviceError)
+        {
+            return _twinManager.UpdateReportedPropertiesAsync(productionRate, deviceError);
+        }
     }
-
-
 }
