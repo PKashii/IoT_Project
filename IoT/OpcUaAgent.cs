@@ -4,35 +4,39 @@
     using Opc.UaFx;
     using Opc.UaFx.Client;
     using System.Linq;
+    using Newtonsoft.Json;
 
     public class OpcUaAgent
     {
         private readonly OpcClient _client;
         private readonly List<OpcUaDevice> _devices;
+        private readonly Dictionary<string, AzurePublisher> _publishers;
 
-        public OpcUaAgent(string endpoint, List<string> deviceNames)
+        public OpcUaAgent(string endpoint, Dictionary<string, string> deviceConnectionStrings)
         {
             _client = new OpcClient(endpoint);
-            _devices = deviceNames.Select(name => new OpcUaDevice(name)).ToList();
+            _devices = deviceConnectionStrings.Keys.Select(name => new OpcUaDevice(name)).ToList();
+
+            _publishers = deviceConnectionStrings.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new AzurePublisher(kvp.Value, kvp.Key)
+            );
         }
 
-        public void Run()
+        public async Task RunAsync()
         {
             _client.Connect();
-            Console.WriteLine("Connected to OPC UA server.\n");
 
             while (true)
             {
                 foreach (var device in _devices)
                 {
                     var values = ReadDeviceData(device);
-                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {device.Name}");
-                    foreach (var kvp in values)
-                        Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                    await _publishers[device.Name].SendTelemetryAsync(values);
+                    Console.WriteLine($"[{device.Name}] Sent data: {JsonConvert.SerializeObject(values)}");
                 }
 
-                Console.WriteLine();
-                Thread.Sleep(1000);
+                await Task.Delay(1000);
             }
         }
 
@@ -63,5 +67,6 @@
             };
         }
     }
+
 
 }
