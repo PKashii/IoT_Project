@@ -34,7 +34,7 @@ public class OpcUaAgent
 
             _publishers[deviceId] = publisher;
             _directMethodHandlers[deviceId] = handler;
-            _lastDeviceErrors[deviceId] = 0;
+            _lastDeviceErrors[deviceId] = -1;
         }
     }
 
@@ -76,7 +76,7 @@ public class OpcUaAgent
                     _lastDeviceErrors[device.Name] = deviceError;
                 }
 
-                Console.WriteLine($"[{device.Name}] Sent data: {JsonConvert.SerializeObject(values, Formatting.Indented)}");
+                // Console.WriteLine($"[{device.Name}] Sent data: {JsonConvert.SerializeObject(values, Formatting.Indented)}");
             }
 
             await Task.Delay(1000);
