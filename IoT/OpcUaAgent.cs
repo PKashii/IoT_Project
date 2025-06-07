@@ -13,6 +13,8 @@ public class OpcUaAgent
     private readonly Dictionary<string, int> _desiredProductionRates;
     private readonly Dictionary<string, DirectMethodHandler> _directMethodHandlers;
     private readonly Dictionary<string, int> _lastDeviceErrors;
+    private readonly Dictionary<string, int> _lastWrittenProductionRates = new();
+
 
     public OpcUaAgent(string endpoint, Dictionary<string, string> deviceConnectionStrings)
     {
@@ -53,8 +55,13 @@ public class OpcUaAgent
             {
                 if (_desiredProductionRates.TryGetValue(device.Name, out int desiredRate))
                 {
-                    WriteProductionRate(device, desiredRate);
+                    if (!_lastWrittenProductionRates.TryGetValue(device.Name, out int lastWritten) || lastWritten != desiredRate)
+                    {
+                        WriteProductionRate(device, desiredRate);
+                        _lastWrittenProductionRates[device.Name] = desiredRate;
+                    }
                 }
+
 
                 var values = ReadDeviceData(device);
                 await _publishers[device.Name].SendTelemetryAsync(values);
