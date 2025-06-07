@@ -28,9 +28,14 @@ class Program
             var input = Console.ReadLine()?.Trim();
             var parts = input.Split(new[] { ',' }, 2);
 
-            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]) || !parts[1].Contains("Hostname=") || !parts[1].Contains("DeviceId=") || !parts[1].Contains("SharedAccessKey="))
+            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
             {
-                Console.WriteLine("Invalid input. Please enter in the format: <DeviceName>, <ConString>");
+                Console.WriteLine("Please enter in the format: <DeviceName>, <ConString>");
+                continue;
+            }
+            if (!parts[1].Contains("HostName=") || !parts[1].Contains("DeviceId=") || !parts[1].Contains("SharedAccessKey="))
+            {
+                Console.WriteLine("Invalid connection string. It must contain HostName, DeviceId, and SharedAccessKey.");
                 continue;
             }
 
