@@ -19,22 +19,6 @@ namespace OpcAgent
         public async Task InitializeAsync()
         {
             await _client.SetDesiredPropertyUpdateCallbackAsync(OnDesiredPropertyChanged, null);
-
-            var twin = await _client.GetTwinAsync();
-            if (twin.Properties.Desired.Contains("ProductionRate"))
-            {
-                var value = twin.Properties.Desired["ProductionRate"];
-                int desired;
-                try
-                {
-                    desired = Convert.ToInt32(value);
-                    _onDesiredProductionRateChanged(desired);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[ERROR] Cannot convert desired ProductionRate: {value} ({ex.Message})");
-                }
-            }
         }
 
         private Task OnDesiredPropertyChanged(TwinCollection desiredProperties, object userContext)

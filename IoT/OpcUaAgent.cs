@@ -68,15 +68,13 @@ public class OpcUaAgent
                     var errorEvent = new Dictionary<string, object>
                     {
                         {"deviceId", device.Name},
-                        {"timestamp", DateTime.UtcNow},
+                        {"timestamp", DateTime.Now},
                         {"eventType", "DeviceErrorChanged"},
                         {"newValue", deviceError}
                     };
                     await _publishers[device.Name].SendTelemetryAsync(errorEvent);
                     _lastDeviceErrors[device.Name] = deviceError;
                 }
-
-                // Console.WriteLine($"[{device.Name}] Sent data: {JsonConvert.SerializeObject(values, Formatting.Indented)}");
             }
 
             await Task.Delay(1000);
@@ -118,11 +116,11 @@ public class OpcUaAgent
 
         if (status.IsGood)
         {
-            Console.WriteLine($"[{device.Name}] Desired ProductionRate set to: {desiredRate}");
+            Console.WriteLine($"[INFO] {device.Name}: Desired ProductionRate set to: {desiredRate}");
         }
         else
         {
-            Console.WriteLine($"[{device.Name}] Write failed: {status}");
+            Console.WriteLine($"[ERROR] {device.Name}: Write failed: {status}");
         }
     }
 }

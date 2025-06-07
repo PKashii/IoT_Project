@@ -21,7 +21,7 @@ namespace OpcAgent
         public async Task SendTelemetryAsync(Dictionary<string, object> data)
         {
             data["deviceId"] = _deviceId;
-            data["timestamp"] = DateTime.UtcNow;
+            data["timestamp"] = DateTime.Now;
 
             string json = JsonConvert.SerializeObject(data);
             var message = new Message(Encoding.UTF8.GetBytes(json))
